@@ -289,7 +289,7 @@ function PrettyDate(
     dateFormat?: DateFormat;
   },
 ) {
-  const formatted = date.toLocaleDateString(lang ?? "fr-FR", { dateStyle });
+  const formatted = date.toLocaleDateString("fr-FR", {});
   return <time dateTime={date.toISOString()}>{formatted}</time>;
 }
 
