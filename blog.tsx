@@ -78,6 +78,12 @@ function hmrSocket(callback) {
 }
 `;
 
+function errorHandler(err: unknown) {
+  return new Response(`Internal server error: ${(err as Error)?.message}`, {
+    status: 500,
+  });
+}
+
 /** The main function of the library.
  *
  * ```jsx
@@ -100,7 +106,11 @@ export default async function blog(settings?: BlogSettings) {
   const blogState = await configureBlog(url, IS_DEV, settings);
 
   const blogHandler = createBlogHandler(blogState);
-  serve(blogHandler);
+  serve(blogHandler, {
+    port: blogState.port,
+    hostname: blogState.hostname,
+    onError: errorHandler,
+  });
 }
 
 export function createBlogHandler(state: BlogState) {
@@ -162,7 +172,7 @@ export async function configureBlog(
     const blogPath = fromFileUrl(url);
     directory = dirname(blogPath);
   } catch (e) {
-    console.log(e);
+    console.error(e);
     throw new Error("Cannot run blog from a remote URL.");
   }
 
@@ -201,10 +211,14 @@ async function watchForChanges(postsDirectory: string) {
     if (event.kind === "modify" || event.kind === "create") {
       for (const path of event.paths) {
         if (path.endsWith(".md")) {
-          await loadPost(postsDirectory, path);
-          HMR_SOCKETS.forEach((socket) => {
-            socket.send("refresh");
-          });
+          try {
+            await loadPost(postsDirectory, path);
+            HMR_SOCKETS.forEach((socket) => {
+              socket.send("refresh");
+            });
+          } catch (err) {
+            console.error(`loadPost ${path} error:`, err.message);
+          }
         }
       }
     }
@@ -217,10 +231,9 @@ async function loadPost(postsDirectory: string, path: string) {
   // Remove .md extension.
   pathname = pathname.slice(0, -3);
 
-  const { content, data: _data } = frontMatter(contents) as {
-    data: Record<string, string | string[] | Date>;
-    content: string;
-  };
+  const { body: content, attrs: _data } = frontMatter<Record<string, unknown>>(
+    contents,
+  );
 
   const data = recordGetter(_data);
 
@@ -243,15 +256,19 @@ async function loadPost(postsDirectory: string, path: string) {
     // Note: users can override path of a blog post using
     // pathname in front matter.
     pathname: data.get("pathname") ?? pathname,
-    publishDate: data.get("publish_date")!,
+    // Note: no error when publish_date is wrong or missed
+    publishDate: data.get("publish_date") instanceof Date
+      ? data.get("publish_date")!
+      : new Date(),
     snippet,
     markdown: content,
     coverHtml: data.get("cover_html"),
     ogImage: data.get("og:image"),
     tags: data.get("tags"),
+    allowIframes: data.get("allow_iframes"),
+    readTime: readingTime(content),
   };
   POSTS.set(pathname, post);
-  console.log("Load: ", post.pathname);
 }
 
 export async function handler(
@@ -261,6 +278,12 @@ export async function handler(
   const { state: blogState } = ctx;
   const { pathname, searchParams } = new URL(req.url);
   const canonicalUrl = blogState.canonicalUrl || new URL(req.url).origin;
+  const ogImage = typeof blogState.ogImage !== "string"
+    ? blogState.ogImage?.url
+    : blogState.ogImage;
+  const twitterCard = typeof blogState.ogImage !== "string"
+    ? blogState.ogImage?.twitterCard
+    : "summary_large_image";
 
   if (pathname === "/feed") {
     return serveRSS(req, blogState, POSTS);
@@ -295,12 +318,30 @@ export async function handler(
     ],
   };
 
-  if (blogState.favicon) {
+  if (typeof blogState.favicon === "string") {
     sharedHtmlOptions.links?.push({
       href: blogState.favicon,
       type: "image/x-icon",
       rel: "icon",
     });
+  } else {
+    if (blogState.favicon?.light) {
+      sharedHtmlOptions.links?.push({
+        href: blogState.favicon.light,
+        type: "image/x-icon",
+        media: "(prefers-color-scheme:light)",
+        rel: "icon",
+      });
+    }
+
+    if (blogState.favicon?.dark) {
+      sharedHtmlOptions.links?.push({
+        href: blogState.favicon.dark,
+        type: "image/x-icon",
+        media: "(prefers-color-scheme:dark)",
+        rel: "icon",
+      });
+    }
   }
 
   if (pathname === "/") {
@@ -311,11 +352,11 @@ export async function handler(
         "description": blogState.description,
         "og:title": blogState.title,
         "og:description": blogState.description,
-        "og:image": blogState.ogImage ?? blogState.cover,
+        "og:image": ogImage ?? blogState.cover,
         "twitter:title": blogState.title,
         "twitter:description": blogState.description,
-        "twitter:image": blogState.ogImage ?? blogState.cover,
-        "twitter:card": blogState.ogImage ? "summary_large_image" : undefined,
+        "twitter:image": ogImage ?? blogState.cover,
+        "twitter:card": ogImage ? twitterCard : undefined,
       },
       styles: [
         ...(blogState.style ? [blogState.style] : []),
@@ -342,7 +383,7 @@ export async function handler(
         "twitter:title": post.title,
         "twitter:description": post.snippet,
         "twitter:image": post.ogImage,
-        "twitter:card": post.ogImage ? "summary_large_image" : undefined,
+        "twitter:card": post.ogImage ? twitterCard : undefined,
       },
       styles: [
         gfm.CSS,
@@ -435,8 +476,8 @@ export function ga(gaKey: string): BlogMiddleware {
     try {
       res = await ctx.next() as Response;
     } catch (e) {
-      err = e;
-      res = new Response("Internal server error", {
+      err = e as Error;
+      res = new Response(`Internal server error: ${err.message}`, {
         status: 500,
       });
     } finally {
@@ -471,8 +512,14 @@ export function redirects(redirectMap: Record<string, string>): BlogMiddleware {
         },
       });
     }
-
-    return await ctx.next();
+    try {
+      return await ctx.next();
+    } catch (e) {
+      console.error(e);
+      return new Response(`Internal server error: ${e.message}`, {
+        status: 500,
+      });
+    }
   };
 }
 
@@ -495,4 +542,10 @@ function recordGetter(data: Record<string, unknown>) {
       return data[key] as T;
     },
   };
+}
+
+function readingTime(text: string) {
+  const wpm = 225;
+  const words = text.split(/\s+/).length;
+  return Math.ceil(words / wpm);
 }

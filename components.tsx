@@ -8,7 +8,7 @@
 /// <reference lib="deno.ns" />
 
 import { Fragment, gfm, h } from "./deps.ts";
-import type { BlogState, DateStyle, Post } from "./types.d.ts";
+import type { BlogState, DateFormat, Post } from "./types.d.ts";
 
 const socialAppIcons = new Map([
   ["github.com", IconGithub],
@@ -32,7 +32,7 @@ export function Index({ state, posts }: IndexProps) {
   );
 
   return (
-    <>
+    <div class="home">
       {state.header || (
         <header
           class="w-full h-90 lt-sm:h-80 bg-cover bg-center bg-no-repeat"
@@ -88,6 +88,10 @@ export function Index({ state, posts }: IndexProps) {
                       class="relative flex items-center justify-center w-8 h-8 rounded-full bg-gray-600/10 dark:bg-gray-400/10 text-gray-700 dark:text-gray-400 hover:bg-gray-600/15 dark:hover:bg-gray-400/15 hover:text-black dark:hover:text-white transition-colors group"
                       target="_blank"
                       href={link.url}
+                      rel={link.target === "_blank"
+                        ? "noopener noreferrer"
+                        : ""}
+                      target={link.target ?? "_self"}
                     >
                       {link.icon ? link.icon : <Icon />}
                       <Tooltip>{link.title}</Tooltip>
@@ -106,7 +110,7 @@ export function Index({ state, posts }: IndexProps) {
             <PostCard
               post={post}
               key={post.pathname}
-              dateStyle={state.dateStyle}
+              dateFormat={state.dateFormat}
               lang={state.lang}
             />
           ))}
@@ -114,14 +118,14 @@ export function Index({ state, posts }: IndexProps) {
 
         {state.footer || <Footer author={state.author} />}
       </div>
-    </>
+    </div>
   );
 }
 
 function PostCard(
-  { post, dateStyle, lang }: {
+  { post, dateFormat, lang }: {
     post: Post;
-    dateStyle?: DateStyle;
+    dateFormat?: DateFormat;
     lang?: string;
   },
 ) {
@@ -134,12 +138,10 @@ function PostCard(
       </h3>
       <Tags tags={post.tags} />
       <p class="text-gray-500/80">
-        {(post.author) &&
-          <span>Par {post.author || ""} le {" "}</span>}
+        {post.author && <span>{post.author} {" "}</span>}
         <PrettyDate
           date={post.publishDate}
-          dateStyle={dateStyle}
-          lang={lang}
+          dateFormat={dateFormat}
         />
       </p>
       <p class="mt-3 text-gray-600 dark:text-gray-400">{post.snippet}</p>
@@ -162,9 +164,11 @@ interface PostPageProps {
 }
 
 export function PostPage({ post, state }: PostPageProps) {
-  const html = gfm.render(post.markdown);
+  const html = gfm.render(post.markdown, {
+    allowIframes: post.allowIframes,
+  });
   return (
-    <Fragment>
+    <div className={`post ${post.pathname.substring(1)}`}>
       {state.showHeaderOnPostPage && state.header}
       <div class="max-w-screen-sm px-6 pt-8 mx-auto">
         <div class="pb-16">
@@ -196,15 +200,16 @@ export function PostPage({ post, state }: PostPageProps) {
           <h1 class="text-4xl text-gray-900 dark:text-gray-100 font-bold">
             {post.title}
           </h1>
+          {state.readtime &&
+            <p>{post.readTime} min read</p>}
           <Tags tags={post.tags} />
           <p class="mt-1 text-gray-500">
             {(post.author || state.author) && (
-              <span>Par {post.author || state.author} le{" "}</span>
+              <p>{post.author || state.author}</p>
             )}
             <PrettyDate
               date={post.publishDate}
-              dateStyle={state.dateStyle}
-              lang={state.lang}
+              dateFormat={state.dateFormat}
             />
           </p>
           <div
@@ -216,11 +221,11 @@ export function PostPage({ post, state }: PostPageProps) {
           />
         </article>
 
-        {state.section}
+        {state.section && state.section(post)}
 
         {state.footer || <Footer author={state.author} />}
       </div>
-    </Fragment>
+    </div>
   );
 }
 
@@ -279,10 +284,9 @@ function Tooltip({ children }: { children: string }) {
 }
 
 function PrettyDate(
-  { date, dateStyle, lang }: {
+  { date, dateFormat }: {
     date: Date;
-    dateStyle?: DateStyle;
-    lang?: string;
+    dateFormat?: DateFormat;
   },
 ) {
   const formatted = date.toLocaleDateString(lang ?? "fr-FR", { dateStyle });

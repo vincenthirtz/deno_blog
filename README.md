@@ -80,14 +80,25 @@ blog({
   title: "My Blog",
   header: <header>Your custom header</header>,
   showHeaderOnPostPage: true, // by default, the header will only show on home, set showHeaderOnPostPage to true to make it show on each post page
-  section: <section>Your custom section</section>,
+  section: (post) => (
+    <section>Your custom section with access to Post props.</section>
+  ),
   footer: <footer>Your custom footer</footer>,
 });
 ```
 
+Beware to use `.tsx` extension to this extent.
+
 ## Hosting with Deno Deploy
 
-<TODO>
+To deploy the project to the live internet, you can use
+[Deno Deploy](https://deno.com/deploy):
+
+1. Push your project to GitHub.
+2. [Create a Deno Deploy project](https://dash.deno.com/new).
+3. [Link](https://deno.com/deploy/docs/projects#enabling) the Deno Deploy
+   project to the `main.tsx` file in the root of the created repository.
+4. The project will be deployed to a public `$project.deno.dev` subdomain.
 
 ## Self hosting
 
@@ -96,5 +107,3 @@ You can also self-host the blog, in such case run:
 ```shellsession
 $ deno task serve
 ```
-
-TODO(bartlomieju): allow specyfing port and hostname?
