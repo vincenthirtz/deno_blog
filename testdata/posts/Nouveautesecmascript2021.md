@@ -5,7 +5,7 @@ publish_date: 2021-02-04
 abstract: Liste des nouveautés autour de Javascript
 ---
 
-<img src="images/hello2.png"/>
+<img src="images/news.jpg"/>
 
 replaceAll
 

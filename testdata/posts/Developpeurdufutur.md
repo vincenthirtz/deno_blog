@@ -5,7 +5,7 @@ publish_date: 2021-02-23
 abstract: Liste des nouveautés autour de Javascript
 ---
 
-<img src="https://www.datocms-assets.com/42175/1614092293-markus-winkler-4o0-xbicj6e-unsplash.jpg?fit=crop&fm=webp&h=1000&w=2000"/>
+<img src="images/devfutur.webp"/>
 
 Le métier de développeur a de multiples facettes. Il évolue sans cesse et pourtant beaucoup de gens ont encore du mal à mettre des mots ou des images sur le travail qu'on accompli. Il est parfois compliqué d'expliquer des notions simples pour nous à des personnes qui ne connaissent pas le monde du développement.
 

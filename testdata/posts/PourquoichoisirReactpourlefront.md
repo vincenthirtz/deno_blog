@@ -5,7 +5,7 @@ publish_date: 2021-02-25
 abstract: Je vais essayer de répondre à cette grande question que beaucoup de clients posent.
 ---
 
-<img src="images/react.png"/>
+<img src="images/react.jpg"/>
 
 Pourquoi choisir React pour le front ? Je vais essayer de répondre à cette grande question que beaucoup de clients posent.
 
