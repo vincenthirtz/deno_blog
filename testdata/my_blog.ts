@@ -4,7 +4,7 @@ blog({
   author: "Vincent Hirtz",
   title: "Vincent Hirtz",
   description: "Some dev tips & tricks",
-  avatar: "https://media-exp2.licdn.com/dms/image/C4D03AQGfDfLqtkDTaw/profile-displayphoto-shrink_400_400/0/1517476100079?e=1663200000&v=beta&t=WrzGAM5Kjt4l2zDaQSFkBfKXX8Y8kUwfR-lfxC65Q_k",
+  avatar: "https://deno.land/images/artwork/space_deno.png?__frsh_c=kzezs6t6z0mg",
   avatarClass: "rounded-full",
   links: [
     { title: "hirtzvincent@gmail.com", url: "mailto:hirtzvincent@gmail.com" },
