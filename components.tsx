@@ -9,6 +9,7 @@
 
 import { Fragment, gfm, h } from "./deps.ts";
 import type { BlogState, DateFormat, Post } from "./types.d.ts";
+globalThis.document = {} as any;
 
 const socialAppIcons = new Map([
   ["github.com", IconGithub],
@@ -68,6 +69,7 @@ export function Index({ state, posts }: IndexProps) {
                 {state.description}
               </p>
             )}
+            <button onclick={inverseTheme()}>changer le theme</button>
             {state.links && (
               <nav class="mt-3 flex gap-2">
                 {state.links.map((link) => {
@@ -122,6 +124,17 @@ export function Index({ state, posts }: IndexProps) {
     </div>
   );
 }
+
+function inverseTheme() {
+  const themeLight = document.querySelector('.light');
+  const themeDark = document.querySelector('.dark');
+
+  if(themeLight) {
+    themeLight.classList.replace('light', 'dark');
+  } else {
+    themeDark.classList.replace('dark', 'light');
+  }
+};
 
 function PostCard(
   { post, dateFormat, lang }: {
