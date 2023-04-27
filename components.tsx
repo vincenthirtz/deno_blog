@@ -30,7 +30,7 @@ export function Index({ state, posts }: IndexProps) {
     postIndex.push(post);
   }
   postIndex.sort(
-    (a, b) => (b.publishDate?.getTime() ?? 0) - (a.publishDate?.getTime() ?? 0),
+    (a, b) => (b.publishDate?.getTime() ?? 0) - (a.publishDate?.getTime() ?? 0)
   );
 
   return (
@@ -79,7 +79,7 @@ export function Index({ state, posts }: IndexProps) {
                     Icon = IconEmail;
                   } else {
                     const icon = socialAppIcons.get(
-                      url.hostname.replace(/^www\./, ""),
+                      url.hostname.replace(/^www\./, "")
                     );
                     if (icon) {
                       Icon = icon;
@@ -91,9 +91,9 @@ export function Index({ state, posts }: IndexProps) {
                       class="relative flex items-center justify-center w-8 h-8 rounded-full bg-gray-600/10 dark:bg-gray-400/10 text-gray-700 dark:text-gray-400 hover:bg-gray-600/15 dark:hover:bg-gray-400/15 hover:text-black dark:hover:text-white transition-colors group"
                       target="_blank"
                       href={link.url}
-                      rel={link.target === "_blank"
-                        ? "noopener noreferrer"
-                        : ""}
+                      rel={
+                        link.target === "_blank" ? "noopener noreferrer" : ""
+                      }
                       target={link.target ?? "_self"}
                     >
                       {link.icon ? link.icon : <Icon />}
@@ -126,23 +126,27 @@ export function Index({ state, posts }: IndexProps) {
 }
 
 function inverseTheme() {
-  const themeLight = document.querySelector('.light');
-  const themeDark = document.querySelector('.dark');
+  if (typeof document === 'object' && document !== null && 'querySelectorAll' in document) {
+    const themeLight = document.querySelectorAll(".light");
+    const themeDark = document.querySelectorAll(".dark");
 
-  if(themeLight) {
-    themeLight.classList.replace('light', 'dark');
-  } else {
-    themeDark.classList.replace('dark', 'light');
+    if (themeLight) {
+      themeLight.classList.replace("light", "dark");
+    } else {
+      themeDark.classList.replace("dark", "light");
+    }
   }
-};
+}
 
-function PostCard(
-  { post, dateFormat, lang }: {
-    post: Post;
-    dateFormat?: DateFormat;
-    lang?: string;
-  },
-) {
+function PostCard({
+  post,
+  dateFormat,
+  lang,
+}: {
+  post: Post;
+  dateFormat?: DateFormat;
+  lang?: string;
+}) {
   return (
     <div class="pt-12 first:pt-0">
       <h3 class="text-2xl font-bold">
@@ -152,11 +156,8 @@ function PostCard(
       </h3>
       <Tags tags={post.tags} />
       <p class="text-gray-500/80">
-        {post.author && <span>{post.author} {" "}</span>}
-        <PrettyDate
-          date={post.publishDate}
-          dateFormat={dateFormat}
-        />
+        {post.author && <span>{post.author} </span>}
+        <PrettyDate date={post.publishDate} dateFormat={dateFormat} />
       </p>
       <p class="mt-3 text-gray-600 dark:text-gray-400">{post.snippet}</p>
       <p class="mt-3">
@@ -215,17 +216,13 @@ export function PostPage({ post, state }: PostPageProps) {
           <h1 class="text-4xl text-gray-900 dark:text-gray-100 font-bold">
             {post.title}
           </h1>
-          {state.readtime &&
-            <p>{post.readTime} min read</p>}
+          {state.readtime && <p>{post.readTime} min read</p>}
           <Tags tags={post.tags} />
           <p class="mt-1 text-gray-500">
             {(post.author || state.author) && (
               <p>{post.author || state.author}</p>
             )}
-            <PrettyDate
-              date={post.publishDate}
-              dateFormat={state.dateFormat}
-            />
+            <PrettyDate date={post.publishDate} dateFormat={state.dateFormat} />
           </p>
           <div
             class="mt-8 markdown-body"
@@ -249,8 +246,7 @@ function Footer(props: { author?: string }) {
     <footer class="mt-20 pb-16 lt-sm:pb-8 lt-sm:mt-16">
       <p class="flex items-center gap-2.5 text-gray-400/800 dark:text-gray-500/800 text-sm">
         <span>
-          &copy; {new Date().getFullYear()} {props.author} &middot; Propulsé par
-          {" "}
+          &copy; {new Date().getFullYear()} {props.author} &middot; Propulsé par{" "}
           <a
             class="inline-flex items-center gap-1 underline hover:text-gray-800 dark:hover:text-gray-200 transition-colors"
             href="https://deno.land/x/blog"
@@ -273,7 +269,9 @@ function Footer(props: { author?: string }) {
 function Tooltip({ children }: { children: string }) {
   return (
     <div
-      className={"absolute top-10 px-3 h-8 !leading-8 bg-black/80 text-white text-sm rounded-md whitespace-nowrap opacity-0 group-hover:opacity-100 group-focus:opacity-100 transition-opacity"}
+      className={
+        "absolute top-10 px-3 h-8 !leading-8 bg-black/80 text-white text-sm rounded-md whitespace-nowrap opacity-0 group-hover:opacity-100 group-focus:opacity-100 transition-opacity"
+      }
     >
       <span
         className="block absolute text-black/80"
@@ -298,28 +296,27 @@ function Tooltip({ children }: { children: string }) {
   );
 }
 
-function PrettyDate(
-  { date, dateFormat }: {
-    date: Date;
-    dateFormat?: DateFormat;
-  },
-) {
+function PrettyDate({
+  date,
+  dateFormat,
+}: {
+  date: Date;
+  dateFormat?: DateFormat;
+}) {
   const formatted = date.toLocaleDateString("fr-FR", {});
   return <time dateTime={date.toISOString()}>{formatted}</time>;
 }
 
 function Tags({ tags }: { tags?: string[] }) {
-  return tags && tags.length > 0
-    ? (
-      <section class="flex gap-x-2 flex-wrap">
-        {tags?.map((tag) => (
-          <a class="text-bluegray-500 font-bold" href={`/?tag=${tag}`}>
-            #{tag}
-          </a>
-        ))}
-      </section>
-    )
-    : null;
+  return tags && tags.length > 0 ? (
+    <section class="flex gap-x-2 flex-wrap">
+      {tags?.map((tag) => (
+        <a class="text-bluegray-500 font-bold" href={`/?tag=${tag}`}>
+          #{tag}
+        </a>
+      ))}
+    </section>
+  ) : null;
 }
 
 function IconRssFeed() {
